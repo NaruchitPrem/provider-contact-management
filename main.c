@@ -14,7 +14,7 @@ void read_data_csv(){
     char *token;
     char *delim  = ",";
     while (fgets(str, sizeof(str), file) != NULL){
-        printf("Provider = %s", str);
+        printf("Provider: %s", str);
         token = strtok(str, delim);
         int col = 0;
         while(token != NULL) {

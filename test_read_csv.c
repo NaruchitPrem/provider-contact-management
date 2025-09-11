@@ -10,11 +10,17 @@ char email[100];
 
 void read_data_csv(){
     FILE *file = fopen("providers.csv" , "r");
+    if (!file) {
+        printf("Cannot open file.\n");
+        return;
+    }
     char str[100] = "";
     char *token;
     char *delim  = ",";
+    printf("+----------------------+-----------------+-----------------+------------------------------+\n");
+    printf("| %-20s | %-15s | %-15s | %-28s |\n", "ProviderName", "ServiceType", "PhoneNumber", "Email");
+    printf("+----------------------+-----------------+-----------------+------------------------------+\n");
     while (fgets(str, sizeof(str), file) != NULL){
-        printf("Provider = %s", str);
         token = strtok(str, delim);
         int col = 0;
         while(token != NULL) {
@@ -29,15 +35,16 @@ void read_data_csv(){
                     strcpy(phoneNumber, token);
                     break;
                 case 3:
+                    token[strcspn(token, "\r\n")] = 0;
                     strcpy(email, token);
                     break;
             }
             col++;
             token = strtok(NULL, delim);
         }
-        printf("ProviderName: %s, ServiceType: %s, PhoneNumber: %s, Email: %s\n", 
-            providerName, serviceType, phoneNumber, email);
+        printf("| %-20s | %-15s | %-15s | %-28s |\n", providerName, serviceType, phoneNumber, email);
     }
+    printf("+----------------------+-----------------+-----------------+------------------------------+\n");
     fclose(file);
 };
 
