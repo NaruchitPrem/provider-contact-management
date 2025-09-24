@@ -80,7 +80,7 @@ int main() {
 
         switch (choice) {
             case 1: read_data(); break;
-            //case 2: add_data(); break;
+            case 2: add_data(); break;
             //case 3: search_data(); break;
             //case 4: update_data(); break;
             //case 5: delete_data(); break;
