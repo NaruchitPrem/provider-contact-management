@@ -40,7 +40,7 @@ void search_data() {
     }
 
     char line[400];
-    fgets(line, sizeof(line), file); // Skip the header line
+    fgets(line, sizeof(line), file);
 
     printf("\nResult:\n");
     while (fgets(line, sizeof(line), file)) {
@@ -69,7 +69,7 @@ void search_data() {
         }
     }
 
-    if (!found) {
+    if (found != 1) {
         printf("No data found matching the search term. '%s'\n", searchTerm);
     }
 
