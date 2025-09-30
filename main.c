@@ -270,13 +270,25 @@ void update_data() {
     fgets(new_service, 100, stdin);
     remove_newline(new_service);
     
-    printf("Enter new Phone Number: ");
-    fgets(new_phone, 50, stdin);
-    remove_newline(new_phone);
+    while (1) {
+        printf("Enter Phone Number (e.g., 555-1234): ");
+        fgets(new_phone, 50, stdin);
+        remove_newline(new_phone);
+        if (is_valid_phone(new_phone)) {
+            break;
+        }
+        printf("-> Invalid phone number format. Please use only digits and hyphens.\n");
+    }
 
-    printf("Enter new Email: ");
-    fgets(new_email, 100, stdin);
-    remove_newline(new_email);
+    while (1) {
+        printf("Enter Email (e.g., contact@example.com): ");
+        fgets(new_email, 100, stdin);
+        remove_newline(new_email);
+        if (is_valid_email(new_email)) {
+            break;
+        }
+        printf("-> Invalid email format. Please ensure it includes '@' and a '.' correctly.\n");
+    }
 
     infile = fopen("providers.csv", "r");
     FILE *outfile = fopen("temp.csv", "w");
