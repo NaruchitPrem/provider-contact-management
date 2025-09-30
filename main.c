@@ -104,11 +104,6 @@ int is_valid_email(const char *email) {
 }
 
 int add_data() {
-    FILE *file = fopen("providers.csv", "a");
-    if (file == NULL) {
-        printf("Error opening file!\n");
-        return 1;
-    }
 
     printf("===== Add New Provider =====\n");
 
@@ -140,12 +135,44 @@ int add_data() {
         printf("-> Invalid email format. Please ensure it includes '@' and a '.' correctly.\n");
     }
 
+
+    printf("\n----------------------------------------\n");
+    printf("You are about to add the following data:\n");
+    printf("  Provider Name: %s\n", providerName);
+    printf("  Service Type:  %s\n", serviceType);
+    printf("  Phone Number:  %s\n", phoneNumber);
+    printf("  Email:         %s\n", email);
+    printf("----------------------------------------\n");
+
+    char confirmation[10];
+    while (1) {
+        printf("Save this information? (yes/no): ");
+        fgets(confirmation, 10, stdin);
+        remove_newline(confirmation);
+
+        if (strcmp(confirmation, "yes") == 0) {
+            break;
+        } else if (strcmp(confirmation, "no") == 0) {
+            printf("Add operation cancelled. Returning to main menu.\n");
+            return 0;
+        } else {
+            printf("-> Invalid input. Please type 'yes' or 'no'.\n");
+        }
+    }
+
+    FILE *file = fopen("providers.csv", "a");
+    if (file == NULL) {
+        printf("Error: Could not open providers.csv for writing.\n");
+        return 0;
+    }
+
     fprintf(file, "%s,%s,%s,%s\n", providerName, serviceType, phoneNumber, email);
-
     fclose(file);
-    printf("\nProvider added successfully!\n");
 
+    printf("\nProvider added successfully!\n");
+    
     return 0;
+
 }
 
 void stringToLower(char *dest, const char *src) {
@@ -230,33 +257,46 @@ void update_data() {
     int found_flag = 0;
 
     printf("\n===== Update Data =====\n");
-    printf("Enter Provider Name to edit: ");
-    fgets(search_name, 100, stdin);
-    remove_newline(search_name);
+    while (1) {
+        printf("Enter Provider Name to edit (or type 'exit' to cancel): ");
+        fgets(search_name, 100, stdin);
+        remove_newline(search_name);
 
-    FILE *infile = fopen("providers.csv", "r");
-    if (infile == NULL) {
-        printf("Error: Cannot find providers.csv!\n");
-        return;
-    }
-
-    while (fgets(line_buffer, 512, infile)) {
-        current_line_number++;
-        char temp_name[100];
-        sscanf(line_buffer, "%[^,]", temp_name);
-        
-        if (strcmp(search_name, temp_name) == 0) {
-            printf("Found '%s' at line %d\n", search_name, current_line_number);
-            found_flag = 1;
-            line_to_edit = current_line_number;
-            break;
+        if (strcmp(search_name, "exit") == 0) {
+            printf("Update cancelled.\n");
+            return;
         }
-    }
-    fclose(infile);
+        
 
-    if (found_flag == 0) {
-        printf("'%s' not found in the file.\n", search_name);
-        return;
+
+        FILE *infile = fopen("providers.csv", "r");
+        if (infile == NULL) {
+            printf("Error: Cannot find providers.csv!\n");
+            return;
+        }
+
+        found_flag = 0;
+        int current_line_number = 0;
+        
+        while (fgets(line_buffer, 512, infile)) {
+            current_line_number++;
+            char temp_name[100] = "";
+            sscanf(line_buffer, "%[^,]", temp_name);
+            
+            if (strcmp(search_name, temp_name) == 0) {
+                found_flag = 1;
+                line_to_edit = current_line_number;
+                break; 
+            }
+        }
+        fclose(infile);
+
+        if (found_flag == 1) {
+            printf("Found '%s'. Proceeding with update...\n", search_name);
+            break;
+        } else {
+            printf("-> '%s' not found. Please try again.\n\n", search_name);
+        }
     }
 
     char new_name[100], new_service[100], new_phone[50], new_email[100];
@@ -290,7 +330,30 @@ void update_data() {
         printf("-> Invalid email format. Please ensure it includes '@' and a '.' correctly.\n");
     }
 
-    infile = fopen("providers.csv", "r");
+    printf("\n----------------------------------------\n");
+    printf("You are about to update the following data:\n");
+    printf("  Provider Name: %s\n", new_name);
+    printf("  Service Type:  %s\n", new_service);
+    printf("  Phone Number:  %s\n", new_phone);
+    printf("  Email:         %s\n", new_email);
+    printf("----------------------------------------\n");
+
+    char confirmation[10];
+    while (1) {
+        printf("Are you sure you want to update? (yes/no): ");
+        fgets(confirmation, 10, stdin);
+        remove_newline(confirmation);
+
+        if (strcmp(confirmation, "yes") == 0) {
+            break;
+        } else if (strcmp(confirmation, "no") == 0) {
+            printf("Update cancelled. Returning to main menu.\n");
+            return;
+        } else {
+            printf("-> Invalid input. Please type 'yes' or 'no'.\n");
+        }
+
+    FILE *infile = fopen("providers.csv", "r");
     FILE *outfile = fopen("temp.csv", "w");
 
     current_line_number = 0;
@@ -310,6 +373,7 @@ void update_data() {
     rename("temp.csv", "providers.csv");
     
     printf("\nUpdate complete!\n");
+    }
 }
 
 int main() {
@@ -334,7 +398,7 @@ int main() {
             case 4: update_data(); break;
             //case 5: delete_data(); break;
             case 0:
-                printf("Thanks For Using\n");
+                printf("Thanks For Using!\n");
                 exit(0);
             default:
                 printf("Invalid menu selection. Please try again.\n");
