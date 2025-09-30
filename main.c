@@ -110,11 +110,6 @@ int add_data() {
         return 1;
     }
 
-    char providerName[100];
-    char serviceType[100];
-    char phoneNumber[50];
-    char email[100];
-
     printf("===== Add New Provider =====\n");
 
     printf("Enter Provider Name: ");
