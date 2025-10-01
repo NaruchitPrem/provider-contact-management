@@ -580,7 +580,7 @@ int main() {
         scanf("%d", &function);
         while (getchar() != '\n');
 
-        switch (choice) {
+        switch (function) {
             case 1: read_data(); break;
             case 2: add_data(); break;
             case 3: search_data(); break;
