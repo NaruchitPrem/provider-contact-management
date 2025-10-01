@@ -168,10 +168,6 @@ int add_data() {
         printf("Enter Service Type: ");
         fgets(serviceType, sizeof(serviceType), stdin);
         remove_newline(serviceType);
-        if (strcmp(serviceType, "exit") == 0) {
-            printf("Add operation cancelled.\n");
-            return 0;
-        }
         if (is_valid_input(serviceType)) {
             break;
         }
@@ -182,10 +178,6 @@ int add_data() {
         printf("Enter Phone Number (e.g., 555-1234): ");
         fgets(phoneNumber, sizeof(phoneNumber), stdin);
         remove_newline(phoneNumber);
-        if (strcmp(phoneNumber, "exit") == 0) {
-            printf("Add operation cancelled.\n");
-            return 0;
-        }
         if (is_valid_phone(phoneNumber)) {
             break;
         }
@@ -196,10 +188,6 @@ int add_data() {
         printf("Enter Email (e.g., contact@example.com): ");
         fgets(email, sizeof(email), stdin);
         remove_newline(email);
-        if (strcmp(email, "exit") == 0) {
-            printf("Add operation cancelled.\n");
-            return 0;
-        }
         if (is_valid_email(email)) {
             break;
         }
@@ -360,42 +348,19 @@ void update_data() {
 
     char new_name[100], new_service[100], new_phone[50], new_email[100];
 
-   while (1) {
-        printf("Enter New Provider Name (type 'exit' to cancle): ");
-        fgets(new_name, sizeof(new_name), stdin);
-        remove_newline(new_name);
-        if (strcmp(new_name, "exit") == 0) {
-            printf("Update operation cancelled.\n");
-            return ;
-        }
-        if (is_valid_input(new_name)) {
-            break;
-        }
-        printf("-> Invalid input. Name cannot be empty and can only contain letters, numbers, and spaces.\n");
-    }
+    printf("--- Enter new info ---\n");
+    printf("Enter new Provider Name: ");
+    fgets(new_name, 100, stdin);
+    remove_newline(new_name);
 
-    while (1) {
-        printf("Enter New Service Type (type 'exit' to cancle): ");
-        fgets(new_service, sizeof(new_service), stdin);
-        remove_newline(new_service);
-        if (strcmp(new_service, "exit") == 0) {
-            printf("Update operation cancelled.\n");
-            return ;
-        }
-        if (is_valid_input(new_service)) {
-            break;
-        }
-        printf("-> Invalid input. Service Type cannot be empty and can only contain letters, numbers, and spaces.\n");
-    }
+    printf("Enter new Service Type: ");
+    fgets(new_service, 100, stdin);
+    remove_newline(new_service);
     
     while (1) {
         printf("Enter Phone Number (e.g., 555-1234): ");
         fgets(new_phone, 50, stdin);
         remove_newline(new_phone);
-        if (strcmp(new_phone, "exit") == 0) {
-            printf("Update operation cancelled.\n");
-            return ;
-        }
         if (is_valid_phone(new_phone)) {
             break;
         }
@@ -406,10 +371,6 @@ void update_data() {
         printf("Enter Email (e.g., contact@example.com): ");
         fgets(new_email, 100, stdin);
         remove_newline(new_email);
-        if (strcmp(new_email, "exit") == 0) {
-            printf("Update operation cancelled.\n");
-            return ;
-        }
         if (is_valid_email(new_email)) {
             break;
         }
@@ -578,7 +539,6 @@ int main() {
         printf("0) Exit Program\n");
         printf("Select Menu: ");
         scanf("%d", &choice);
-        while (getchar() != '\n');
 
         switch (choice) {
             case 1: read_data(); break;
