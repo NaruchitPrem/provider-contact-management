@@ -139,7 +139,7 @@ int add_data() {
     printf("===== Add New Provider =====\n");
 
    while (1) {
-        printf("Enter Provider Name: ");
+        printf("Enter Provider Name (type 'exit' to cancle): ");
         fgets(providerName, sizeof(providerName), stdin);
         remove_newline(providerName);
         if (strcmp(providerName, "exit") == 0) {
