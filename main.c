@@ -565,10 +565,10 @@ void delete_data() {
 }
 
 int main() {
-    int choice;
+    int function;
 
     while(1) {
-        printf("\n==== Service Provider Data Management System ====\n");
+        printf("\n----- Service Provider Data Management System -----\n");
         printf("1) View All Service Provider Information\n");
         printf("2) Add New Provider Information\n");
         printf("3) Search Service Provider Information\n");
@@ -577,7 +577,7 @@ int main() {
         //printf("6) Test Case\n");
         printf("0) Exit Program\n");
         printf("Select Menu: ");
-        scanf("%d", &choice);
+        scanf("%d", &function);
         while (getchar() != '\n');
 
         switch (choice) {
