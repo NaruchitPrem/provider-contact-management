@@ -134,6 +134,18 @@ int is_valid_input(const char *str) {
     return 1;
 }
 
+void stringToLower(char *dest, const char *src) {
+    int i = 0;
+    for (i = 0; src[i] != '\0'; i++) {
+        if (src[i] >= 'A' && src[i] <= 'Z') {
+            dest[i] = src[i] + 32;
+        } else {
+            dest[i] = src[i];
+        }
+    }
+    dest[i] = '\0';
+}
+
 int add_data() {
 
     printf("===== Add New Provider =====\n");
@@ -220,18 +232,6 @@ int add_data() {
     
     return 0;
 
-}
-
-void stringToLower(char *dest, const char *src) {
-    int i = 0;
-    for (i = 0; src[i] != '\0'; i++) {
-        if (src[i] >= 'A' && src[i] <= 'Z') {
-            dest[i] = src[i] + 32;
-        } else {
-            dest[i] = src[i];
-        }
-    }
-    dest[i] = '\0';
 }
 
 void search_data() {
