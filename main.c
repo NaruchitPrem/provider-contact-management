@@ -438,7 +438,7 @@ void update_data() {
         } else {
             printf("-> Invalid input. Please type 'yes' or 'no'.\n");
         }
-
+    }
     FILE *infile = fopen("providers.csv", "r");
     FILE *outfile = fopen("temp.csv", "w");
 
@@ -459,7 +459,6 @@ void update_data() {
     rename("temp.csv", "providers.csv");
     
     printf("\nUpdate complete!\n");
-    }
 }
 
 void delete_data() {
