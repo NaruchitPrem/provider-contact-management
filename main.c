@@ -666,6 +666,15 @@ void delete_data() {
     printf("\nProvider deleted successfully!\n");
 }
 
+void cleanup_test_files() {
+    if (fopen("providers.csv.bak", "r") != NULL) {
+        remove("providers.csv");
+        rename("providers.csv.bak", "providers.csv");
+    }
+    remove("input.tmp");
+    remove("actual_output.tmp");
+    remove("expected_output.tmp");
+}
 
 void setup_test_file(const char *filename) {
     FILE *file = fopen(filename, "w");
@@ -763,7 +772,107 @@ void unit_test_delete() {
     printf(" [Unit Test] Original delete_data(): PASS \n");
 }
 
-int main() {
+void create_expected_output_file_e2e(const char* filename) {
+    FILE* file = fopen(filename, "w");
+    assert(file != NULL);
+
+    fprintf(file, "\n----- Service Provider Data Management System -----\n");
+    fprintf(file, "1) View All Service Provider Information\n");
+    fprintf(file, "2) Add New Provider Information\n");
+    fprintf(file, "3) Search Service Provider Information\n");
+    fprintf(file, "4) Update Service Provider Information\n");
+    fprintf(file, "5) Delete Service Provider Information\n");
+    fprintf(file, "6) Run Unit Test for Add Function\n");
+    fprintf(file, "7) Run Unit Test for Delete Function\n");
+    fprintf(file, "8) Run End-to-End Test\n");
+    fprintf(file, "0) Exit Program\n");
+    fprintf(file, "Select Menu: ");
+
+    fclose(file);
+}
+
+void run_e2e_test() {
+    cleanup_test_files();
+    printf("\n--- [E2E Test] Starting End-to-End Test ---\n");
+
+    rename("providers.csv", "providers.csv.bak");
+    setup_test_file("providers.csv");
+
+    FILE* input_script = fopen("e2e_input.tmp", "w");
+    assert(input_script != NULL);
+    fprintf(input_script, "2\n");
+    fprintf(input_script, "E2E Corp\n");
+    fprintf(input_script, "Testing\n");
+    fprintf(input_script, "555-888-9999\n");
+    fprintf(input_script, "e2e@test.com\n");
+    fprintf(input_script, "yes\n");
+
+    fprintf(input_script, "5\n");
+    fprintf(input_script, "Provider A\n");
+    fprintf(input_script, "yes\n");
+
+    fprintf(input_script, "0\n");
+    fclose(input_script);
+
+    create_expected_output_file_e2e("expected_output.tmp");
+
+    printf("  - Running test scenario...\n");
+    system("main.exe --test < e2e_input.tmp > actual_output.tmp");
+
+    printf("  - Verifying results...\n");
+    
+    FILE* actual_file = fopen("actual_output.tmp", "r");
+    FILE* expected_file = fopen("expected_output.tmp", "r");
+    assert(actual_file != NULL && expected_file != NULL);
+
+    int is_pass = 1;
+    char line_actual[512], line_expected[512];
+    
+    fgets(line_actual, sizeof(line_actual), actual_file);
+    fgets(line_expected, sizeof(line_expected), expected_file);
+    if(strcmp(line_actual, line_expected) != 0) {
+        is_pass = 0;
+    }
+    
+    FILE* data_file = fopen("providers.csv", "r");
+    assert(data_file != NULL);
+    int line_count = 0;
+    int found_new = 0;
+    int found_deleted = 0;
+    while(fgets(line_actual, sizeof(line_actual), data_file)) {
+        line_count++;
+        if(strstr(line_actual, "E2E Corp")) found_new = 1;
+        if(strstr(line_actual, "Provider A")) found_deleted = 1;
+    }
+    fclose(data_file);
+
+    assert(line_count == 2);
+    assert(found_new == 1);
+    assert(found_deleted == 0);
+
+    if (is_pass) {
+        printf("--- [E2E Test] Result: PASS ---\n");
+    } else {
+        printf("--- [E2E Test] Result: FAIL ---\n");
+        printf("  - The program's screen output did not match the expected result.\n");
+    }
+
+    fclose(actual_file);
+    fclose(expected_file);
+
+    printf("  - Cleaning up test files...\n");
+    remove("e2e_input.tmp");
+    remove("expected_output.tmp");
+    remove("actual_output.tmp"); 
+    remove("providers.csv");
+    rename("providers.csv.bak", "providers.csv");
+}
+
+int main(int argc, char *argv[]) {
+    int is_test_mode = 0;
+    if (argc > 1 && strcmp(argv[1], "--test") == 0) {
+        is_test_mode = 1;
+    }
     int function;
     int keep_running = 1;
     char menu_input[100];
@@ -777,6 +886,7 @@ int main() {
         printf("5) Delete Service Provider Information\n");
         printf("6) Unit Test (Add Function)\n");
         printf("7) Unit Test (Delete Function)\n");
+        printf("8) End-to-End Test\n");
         printf("0) Exit Program\n");
         printf("Select Menu: ");
         fgets(menu_input, sizeof(menu_input), stdin);
@@ -787,14 +897,18 @@ int main() {
         switch (function) {
             case 1:
                 read_data();
-                keep_running = prompt_after_action();
+                if (!is_test_mode) {
+                    keep_running = prompt_after_action();
+                }                
                 break;
             case 2:
                 add_data();
                 break;
             case 3:
                 search_data();
-                keep_running = prompt_after_action();
+                if (!is_test_mode) {
+                    keep_running = prompt_after_action();
+                }                
                 break;
             case 4:
                 update_data();
@@ -804,11 +918,21 @@ int main() {
                 break;
             case 6:
                 unit_test_add();
-                keep_running = prompt_after_action();
+                if (!is_test_mode) {
+                    keep_running = prompt_after_action();
+                }                
                 break;
             case 7:
                 unit_test_delete();
-                keep_running = prompt_after_action();
+                if (!is_test_mode) {
+                    keep_running = prompt_after_action();
+                }                
+                break;
+            case 8:
+                run_e2e_test();
+                if (!is_test_mode) {
+                    keep_running = prompt_after_action();
+                }                
                 break;
             case 0:
                 keep_running = 0;
