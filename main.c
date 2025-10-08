@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 
 char providerName[100];
@@ -665,106 +666,101 @@ void delete_data() {
     printf("\nProvider deleted successfully!\n");
 }
 
+
 void setup_test_file(const char *filename) {
     FILE *file = fopen(filename, "w");
-    if (file == NULL) {
-        printf("Error creating test file.\n");
-        return;
-    }
-    fprintf(file, "Test Provider 1,Service A,111-222-3333,test1@example.com\n");
-    fprintf(file, "Test Provider 2,Service B,444-555-6666,test2@example.com\n");
+    assert(file != NULL);
+    fprintf(file, "Provider A,Service 1,111-111,a@a.com\n");
+    fprintf(file, "Provider B,Service 2,222-222,b@b.com\n");
     fclose(file);
 }
 
 void unit_test_add() {
-    const char *test_filename = "test_providers.csv";
-
-    printf("\n--- Star Testing: add_data ---\n");
-    printf("Caution!!: This test will delete all data in providers.csv and recreate\n");
+    printf("\n--- [Unit Test] Testing Original add_data() ---\n");
     
-    char confirmation[10];
-    printf("Do you want to continue? (yes/no): ");
-    fgets(confirmation, 10, stdin);
-    remove_newline(confirmation);
+    rename("providers.csv", "providers.csv.bak");
+    
+    setup_test_file("providers.csv");
 
-    if (strcmp(confirmation, "yes") != 0) {
-        printf("Cancle Testing\n");
-        return;
-    }
+    FILE* input_script = fopen("input.tmp", "w");
+    assert(input_script != NULL);
+    fprintf(input_script, "New Guy\n");
+    fprintf(input_script, "Some Service\n");
+    fprintf(input_script, "555-1234\n");
+    fprintf(input_script, "new@guy.com\n");
+    fprintf(input_script, "yes\n");
+    fclose(input_script);
 
-    setup_test_file(test_filename);
+    freopen("input.tmp", "r", stdin);
 
-    FILE *file = fopen("providers.csv", "a");
-    fprintf(file, "New Provider,New Service,123-456-7890,new@example.com\n");
-    fclose(file);
+    add_data();
 
-    file = fopen("providers.csv", "r");
-    char line[512];
+    freopen("CON", "r", stdin); 
+
+    FILE* result_file = fopen("providers.csv", "r");
+    assert(result_file != NULL);
+
+    int line_count = 0;
     int found = 0;
-    while (fgets(line, sizeof(line), file)) {
-        if (strstr(line, "New Provider,New Service,123-456-7890,new@example.com")) {
+    char line[512];
+    while (fgets(line, sizeof(line), result_file)) {
+        line_count++;
+        if (strstr(line, "New Guy,Some Service,555-1234,new@guy.com")) {
             found = 1;
-            break;
         }
     }
-    fclose(file);
+    fclose(result_file);
 
-    if (found) {
-        printf("\nTest Result: PASS - Add new provider complete\n");
-    } else {
-        printf("\nTest Result: FAIL - No newly added data was found in the file.\n");
-    }
+    assert(line_count == 3);
+    assert(found == 1);
+
+    remove("input.tmp");
+    remove("providers.csv");
+    rename("providers.csv.bak", "providers.csv");
+
+    printf(" [Unit Test] Original add_data(): PASS \n");
 }
 
 void unit_test_delete() {
-    const char *test_filename = "test_providers.csv";
-    const char *temp_filename = "temp_test.csv";   
+    printf("\n--- [Unit Test] Testing Original delete_data() ---\n");
 
-    printf("\n--- Start Testing: delete_data ---\n");
-    printf("Caution!! : This test will delete all providers.csv data and recreate\n");
+    rename("providers.csv", "providers.csv.bak");
+    setup_test_file("providers.csv");
 
-    char confirmation[10];
-    printf("Do you want to continue? (yes/no): ");
-    fgets(confirmation, 10, stdin);
-    remove_newline(confirmation);
+    FILE* input_script = fopen("input.tmp", "w");
+    assert(input_script != NULL);
+    fprintf(input_script, "Provider A\n");
+    fprintf(input_script, "yes\n");
+    fclose(input_script);
 
-    if (strcmp(confirmation, "yes") != 0) {
-        printf("Cancel Test\n");
-        return;
-    }
+    freopen("input.tmp", "r", stdin);
 
-    setup_test_file(test_filename);
+    delete_data();
 
-    FILE *infile = fopen(test_filename, "r");
-    FILE *outfile = fopen(temp_filename, "w");
-    char line_buffer[512];
-    while (fgets(line_buffer, 512, infile)) {
-        if (strstr(line_buffer, "Test Provider 1") == NULL) {
-            fputs(line_buffer, outfile);
-        }
-    }
-    fclose(infile);
-    fclose(outfile);
+    freopen("CON", "r", stdin); 
 
-    remove(test_filename);             
-    rename(temp_filename, test_filename);   
+    FILE* result_file = fopen("providers.csv", "r");
+    assert(result_file != NULL);
 
-    FILE *file = fopen(test_filename, "r");
-    char line[512];
+    int line_count = 0;
     int found = 0;
-    while (fgets(line, sizeof(line), file)) {
-        if (strstr(line, "Test Provider 1")) {
+    char line[512];
+    while (fgets(line, sizeof(line), result_file)) {
+        line_count++;
+        if (strstr(line, "Provider A")) {
             found = 1;
-            break;
         }
     }
-    fclose(file);
+    fclose(result_file);
 
-    if (!found) {
-        printf("\nTest Result: PASS - Delete provider data successfully\n");
-    } else {
-        printf("\nTest Result: FAIL - Data that should be deleted remains in the file.\n");
-    }
+    assert(line_count == 1);
+    assert(found == 0);
+
+    remove("input.tmp");
+    remove("providers.csv");
+    rename("providers.csv.bak", "providers.csv");
+
+    printf(" [Unit Test] Original delete_data(): PASS \n");
 }
 
 int main() {
