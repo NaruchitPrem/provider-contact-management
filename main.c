@@ -665,6 +665,108 @@ void delete_data() {
     printf("\nProvider deleted successfully!\n");
 }
 
+void setup_test_file(const char *filename) {
+    FILE *file = fopen(filename, "w");
+    if (file == NULL) {
+        printf("Error creating test file.\n");
+        return;
+    }
+    fprintf(file, "Test Provider 1,Service A,111-222-3333,test1@example.com\n");
+    fprintf(file, "Test Provider 2,Service B,444-555-6666,test2@example.com\n");
+    fclose(file);
+}
+
+void unit_test_add() {
+    const char *test_filename = "test_providers.csv";
+
+    printf("\n--- Star Testing: add_data ---\n");
+    printf("Caution!!: This test will delete all data in providers.csv and recreate\n");
+    
+    char confirmation[10];
+    printf("Do you want to continue? (yes/no): ");
+    fgets(confirmation, 10, stdin);
+    remove_newline(confirmation);
+
+    if (strcmp(confirmation, "yes") != 0) {
+        printf("Cancle Testing\n");
+        return;
+    }
+
+    setup_test_file(test_filename);
+
+    FILE *file = fopen("providers.csv", "a");
+    fprintf(file, "New Provider,New Service,123-456-7890,new@example.com\n");
+    fclose(file);
+
+    file = fopen("providers.csv", "r");
+    char line[512];
+    int found = 0;
+    while (fgets(line, sizeof(line), file)) {
+        if (strstr(line, "New Provider,New Service,123-456-7890,new@example.com")) {
+            found = 1;
+            break;
+        }
+    }
+    fclose(file);
+
+    if (found) {
+        printf("\nTest Result: PASS - Add new provider complete\n");
+    } else {
+        printf("\nTest Result: FAIL - No newly added data was found in the file.\n");
+    }
+}
+
+void unit_test_delete() {
+    const char *test_filename = "test_providers.csv";
+    const char *temp_filename = "temp_test.csv";   
+
+    printf("\n--- Start Testing: delete_data ---\n");
+    printf("Caution!! : This test will delete all providers.csv data and recreate\n");
+
+    char confirmation[10];
+    printf("Do you want to continue? (yes/no): ");
+    fgets(confirmation, 10, stdin);
+    remove_newline(confirmation);
+
+    if (strcmp(confirmation, "yes") != 0) {
+        printf("Cancel Test\n");
+        return;
+    }
+
+    setup_test_file(test_filename);
+
+    FILE *infile = fopen(test_filename, "r");
+    FILE *outfile = fopen(temp_filename, "w");
+    char line_buffer[512];
+    while (fgets(line_buffer, 512, infile)) {
+        if (strstr(line_buffer, "Test Provider 1") == NULL) {
+            fputs(line_buffer, outfile);
+        }
+    }
+    fclose(infile);
+    fclose(outfile);
+
+    remove(test_filename);             
+    rename(temp_filename, test_filename);   
+
+    FILE *file = fopen(test_filename, "r");
+    char line[512];
+    int found = 0;
+    while (fgets(line, sizeof(line), file)) {
+        if (strstr(line, "Test Provider 1")) {
+            found = 1;
+            break;
+        }
+    }
+    fclose(file);
+
+    if (!found) {
+        printf("\nTest Result: PASS - Delete provider data successfully\n");
+    } else {
+        printf("\nTest Result: FAIL - Data that should be deleted remains in the file.\n");
+    }
+}
+
 int main() {
     int function;
     int keep_running = 1;
@@ -677,7 +779,8 @@ int main() {
         printf("3) Search Service Provider Information\n");
         printf("4) Update Service Provider Information\n");
         printf("5) Delete Service Provider Information\n");
-        //printf("6) Unit Test\n");
+        printf("6) Unit Test (Add Function)\n");
+        printf("7) Unit Test (Delete Function)\n");
         printf("0) Exit Program\n");
         printf("Select Menu: ");
         fgets(menu_input, sizeof(menu_input), stdin);
@@ -702,6 +805,14 @@ int main() {
                 break;
             case 5:
                 delete_data();
+                break;
+            case 6:
+                unit_test_add();
+                keep_running = prompt_after_action();
+                break;
+            case 7:
+                unit_test_delete();
+                keep_running = prompt_after_action();
                 break;
             case 0:
                 keep_running = 0;
