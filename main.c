@@ -146,6 +146,27 @@ void stringToLower(char *dest, const char *src) {
     dest[i] = '\0';
 }
 
+int prompt_after_action() {
+    char user_choice[100];
+
+    while (1) {
+        printf("\nPress Enter to return to the main menu, or type 'exit' to quit: ");
+        
+        fgets(user_choice, sizeof(user_choice), stdin);
+        remove_newline(user_choice);
+
+        if (strcmp(user_choice, "") == 0) {
+            return 1;
+        } 
+        else if (strcmp(user_choice, "exit") == 0) {
+            return 0;
+        }
+        else {
+            printf("-> Invalid input. Please try again.\n");
+        }
+    }
+}
+
 int add_data() {
 
     printf("===== Add New Provider =====\n");
@@ -310,7 +331,7 @@ void search_data() {
 
 void update_data() {
     char search_name[100];
-    char line_buffer[512];
+    char line_buffer[512]; // บัฟเฟอร์สำหรับเก็บข้อมูลบรรทัดที่เจอ
     int line_to_edit = -1;
     int current_line_number = 0;
     int found_flag = 0;
@@ -325,8 +346,6 @@ void update_data() {
             printf("Update cancelled.\n");
             return;
         }
-        
-
 
         FILE *infile = fopen("providers.csv", "r");
         if (infile == NULL) {
@@ -335,8 +354,9 @@ void update_data() {
         }
 
         found_flag = 0;
-        int current_line_number = 0;
+        current_line_number = 0;
         
+        // ค้นหาบรรทัดที่ต้องการแก้ไข
         while (fgets(line_buffer, 512, infile)) {
             current_line_number++;
             char temp_name[100] = "";
@@ -345,23 +365,53 @@ void update_data() {
             if (strcmp(search_name, temp_name) == 0) {
                 found_flag = 1;
                 line_to_edit = current_line_number;
-                break; 
+                break; // เจอแล้ว หยุดค้นหา (ข้อมูลที่เจอจะยังอยู่ใน line_buffer)
             }
         }
         fclose(infile);
 
         if (found_flag == 1) {
-            printf("Found '%s'. Proceeding with update...\n", search_name);
-            break;
+            break; // ออกจาก loop ค้นหาเพื่อไปขั้นตอนถัดไป
         } else {
             printf("-> '%s' not found. Please try again.\n\n", search_name);
         }
     }
 
+    // ---- ส่วนที่เพิ่มเข้ามา: แสดงข้อมูลปัจจุบันและขอการยืนยัน ----
+    char old_name[100], old_service[100], old_phone[50], old_email[100];
+    // แยกข้อมูลจาก line_buffer ที่เราเจอจากการค้นหา
+    sscanf(line_buffer, "%[^,],%[^,],%[^,],%[^\n]", old_name, old_service, old_phone, old_email);
+
+    printf("\n--- Provider Found ---\n");
+    printf("  Current Name:    %s\n", old_name);
+    printf("  Current Service: %s\n", old_service);
+    printf("  Current Phone:   %s\n", old_phone);
+    printf("  Current Email:   %s\n", old_email);
+    printf("----------------------\n");
+
+    char confirm_edit[10];
+    while (1) {
+        printf("Do you want to edit this provider? (yes/no): ");
+        fgets(confirm_edit, 10, stdin);
+        remove_newline(confirm_edit);
+
+        if (strcmp(confirm_edit, "yes") == 0) {
+            break; // ผู้ใช้ต้องการแก้ไขต่อ
+        } else if (strcmp(confirm_edit, "no") == 0) {
+            printf("Update cancelled. Returning to main menu.\n");
+            return; // ผู้ใช้ยกเลิก กลับไปเมนูหลัก
+        } else {
+            printf("-> Invalid input. Please type 'yes' or 'no'.\n");
+        }
+    }
+    // ---- จบส่วนที่เพิ่มเข้ามา ----
+
+    printf("\nPlease enter the new information for the provider.\n");
     char new_name[100], new_service[100], new_phone[50], new_email[100];
 
-   while (1) {
-        printf("Enter New Provider Name (type 'exit' to cancle): ");
+    // ส่วนของโค้ดเดิมของคุณที่ใช้รับข้อมูลและ validation
+    while (1) {
+        printf("Enter New Provider Name (type 'exit' to cancel): ");
         fgets(new_name, sizeof(new_name), stdin);
         remove_newline(new_name);
         if (strcmp(new_name, "exit") == 0) {
@@ -375,7 +425,7 @@ void update_data() {
     }
 
     while (1) {
-        printf("Enter New Service Type (type 'exit' to cancle): ");
+        printf("Enter New Service Type (type 'exit' to cancel): ");
         fgets(new_service, sizeof(new_service), stdin);
         remove_newline(new_service);
         if (strcmp(new_service, "exit") == 0) {
@@ -439,17 +489,20 @@ void update_data() {
             printf("-> Invalid input. Please type 'yes' or 'no'.\n");
         }
     }
+
+    // ส่วนของการเขียนไฟล์ใหม่ (เหมือนเดิม)
     FILE *infile = fopen("providers.csv", "r");
     FILE *outfile = fopen("temp.csv", "w");
 
     current_line_number = 0;
-    while (fgets(line_buffer, 512, infile)) {
+    char write_buffer[512];
+    while (fgets(write_buffer, 512, infile)) {
         current_line_number++;
         
         if (current_line_number == line_to_edit) {
             fprintf(outfile, "%s,%s,%s,%s\n", new_name, new_service, new_phone, new_email);
         } else {
-            fputs(line_buffer, outfile);
+            fputs(write_buffer, outfile);
         }
     }
     fclose(infile);
@@ -565,33 +618,54 @@ void delete_data() {
 
 int main() {
     int function;
+    int keep_running = 1;
+    char menu_input[100];
 
-    while(1) {
+    while (keep_running) {
         printf("\n----- Service Provider Data Management System -----\n");
         printf("1) View All Service Provider Information\n");
         printf("2) Add New Provider Information\n");
         printf("3) Search Service Provider Information\n");
         printf("4) Update Service Provider Information\n");
         printf("5) Delete Service Provider Information\n");
-        //printf("6) Test Case\n");
+        //printf("6) Unit Test\n");
         printf("0) Exit Program\n");
         printf("Select Menu: ");
-        scanf("%d", &function);
-        while (getchar() != '\n');
+        fgets(menu_input, sizeof(menu_input), stdin);
+        if (sscanf(menu_input, "%d", &function) != 1) {
+            function = -1;
+        }
 
         switch (function) {
-            case 1: read_data(); break;
-            case 2: add_data(); break;
-            case 3: search_data(); break;
-            case 4: update_data(); break;
-            case 5: delete_data(); break;
-            //case 6: tast_case(); break;
+            case 1:
+                read_data();
+                keep_running = prompt_after_action();
+                break;
+            case 2:
+                add_data();
+                break;
+            case 3:
+                search_data();
+                keep_running = prompt_after_action();
+                break;
+            case 4:
+                update_data();
+                break;
+            case 5:
+                delete_data();
+                break;
             case 0:
-                printf("Thanks For Using!\n");
-                exit(0);
+                keep_running = 0;
+                break;
             default:
-                printf("Invalid menu selection. Please try again.\n");
+                printf("\nInvalid choice. Please try again.\n");
+                printf("Please Press Enter to return to the menu...");
+                char enter_buffer[10]; 
+                fgets(enter_buffer, sizeof(enter_buffer), stdin);
+
         }
     }
+
+    printf("\nThanks For Using!!\n");
     return 0;
 }
