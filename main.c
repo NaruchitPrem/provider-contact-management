@@ -146,6 +146,17 @@ void stringToLower(char *dest, const char *src) {
     dest[i] = '\0';
 }
 
+void normalize_phone_number(char *dest, const char *src) {
+    int j = 0;
+    for (int i = 0; src[i] != '\0'; i++) {
+        if (src[i] >= '0' && src[i] <= '9') {
+            dest[j] = src[i];
+            j++;
+        }
+    }
+    dest[j] = '\0';
+}
+
 int prompt_after_action() {
     char user_choice[100];
 
@@ -272,19 +283,39 @@ void search_data() {
     int searchChoice;
     int found = 0;
 
-    printf("What do you want to search from? :\n");
-    printf("1.Provider Name\n");
-    printf("2.Service Type\n");
-    printf("Select (1 or 2): ");
-    scanf("%d", &searchChoice);
-    getchar();
+    while (1) {
+        printf("What do you want to search from? (Type 'back' to return to menu):\n");
+        printf("1.Provider Name\n");
+        printf("2.Service Type\n");
+        printf("3.Phone Number\n");
+        printf("4.Email\n");
+        printf("Select 1 to 4 : ");
+        char choice_input[20];
+        fgets(choice_input, sizeof(choice_input), stdin);
+        remove_newline(choice_input);
+
+        if (strcmp(choice_input, "back") == 0) {
+            printf("Search cancelled.\n");
+            return;
+        }
+        if (sscanf(choice_input, "%d", &searchChoice) == 1 && (searchChoice >= 1 && searchChoice <= 4)) {
+            break;
+        }   
+        printf("\n-> Invalid input. Please select 1 to 4 .\n\n");
+    }
+
 
     printf("Enter the words you want to search for : ");
     fgets(searchTerm, sizeof(searchTerm), stdin);
     searchTerm[strcspn(searchTerm, "\n")] = 0;
 
-    char lowerSearchTerm[100];
-    stringToLower(lowerSearchTerm, searchTerm);
+    char processedSearchTerm[100];
+    if (searchChoice == 3) {
+        normalize_phone_number(processedSearchTerm, searchTerm);
+    } else {
+        stringToLower(processedSearchTerm, searchTerm);
+    }
+
 
     FILE *file = fopen("providers.csv", "r");
     if (file == NULL) {
@@ -293,37 +324,54 @@ void search_data() {
     }
 
     char line[400];
-    fgets(line, sizeof(line), file);
 
-    printf("\nResult:\n");
     while (fgets(line, sizeof(line), file)) {
-        char name[100], serviceType[100];
-        char lineCopy[400];
+        char lineCopy[512];
         strcpy(lineCopy, line);
-        
-        char *token = strtok(line, ",");
-        if (token != NULL) strcpy(name, token);
 
-        token = strtok(NULL, ",");
-        if (token != NULL) strcpy(serviceType, token);
+        char name[100], serviceType[100], phoneNumber[100], email[100];
+        int fields_read = sscanf(line, "%[^,],%[^,],%[^,],%[^\n]", name, serviceType, phoneNumber, email);
 
-        char lowerName[100], lowerServiceType[100];
+        if (fields_read < 4) {
+            continue;
+        }
+
+        char lowerName[100], lowerServiceType[100], normalizedPhone[100],  lowerEmail[100];
         stringToLower(lowerName, name);
         stringToLower(lowerServiceType, serviceType);
+        normalize_phone_number(normalizedPhone, phoneNumber);
+        stringToLower(lowerEmail, email);
 
-        if (searchChoice == 1 && strstr(lowerName, lowerSearchTerm) != NULL) {
-            lineCopy[strcspn(lineCopy, "\n")] = 0;
-            printf("%s\n", lineCopy);
+        int is_match = 0;
+        if (searchChoice == 1 && strstr(lowerName, processedSearchTerm) != NULL) {
+            is_match = 1;
+        } else if (searchChoice == 2 && strstr(lowerServiceType, processedSearchTerm) != NULL) {
+            is_match = 1;
+        } else if (searchChoice == 3 && strstr(normalizedPhone, processedSearchTerm) != NULL) {
+            is_match = 1;
+        } else if (searchChoice == 4 && strstr(lowerEmail, processedSearchTerm) != NULL) {
+            is_match = 1;
+        }
+
+        if (is_match) {
+            if (found == 0) {
+            }
             found = 1;
-        } else if (searchChoice == 2 && strstr(lowerServiceType, lowerSearchTerm) != NULL) {
-            lineCopy[strcspn(lineCopy, "\n")] = 0;
-            printf("%s\n", lineCopy);
-            found = 1;
+
+            char found_name[100], found_service[100], found_phone[50], found_email[100];
+            sscanf(lineCopy, "%[^,],%[^,],%[^,],%[^\n]", found_name, found_service, found_phone, found_email);
+
+            printf("\n--- Provider Found ---\n");
+            printf("  Name:    %s\n", found_name);
+            printf("  Service: %s\n", found_service);
+            printf("  Phone:   %s\n", found_phone);
+            printf("  Email:   %s\n", found_email);
+            printf("----------------------\n");
         }
     }
 
-    if (found != 1) {
-        printf("No data found matching the search term. '%s'\n", searchTerm);
+    if (found == 0) {
+        printf("No data found matching the search term: '%s'\n", searchTerm);
     }
 
     fclose(file);
@@ -331,7 +379,7 @@ void search_data() {
 
 void update_data() {
     char search_name[100];
-    char line_buffer[512]; // บัฟเฟอร์สำหรับเก็บข้อมูลบรรทัดที่เจอ
+    char line_buffer[512];
     int line_to_edit = -1;
     int current_line_number = 0;
     int found_flag = 0;
@@ -342,10 +390,14 @@ void update_data() {
         fgets(search_name, 100, stdin);
         remove_newline(search_name);
 
+
         if (strcmp(search_name, "exit") == 0) {
             printf("Update cancelled.\n");
             return;
         }
+
+        char lower_search_name[100];
+        stringToLower(lower_search_name, search_name);
 
         FILE *infile = fopen("providers.csv", "r");
         if (infile == NULL) {
@@ -356,30 +408,30 @@ void update_data() {
         found_flag = 0;
         current_line_number = 0;
         
-        // ค้นหาบรรทัดที่ต้องการแก้ไข
         while (fgets(line_buffer, 512, infile)) {
             current_line_number++;
             char temp_name[100] = "";
             sscanf(line_buffer, "%[^,]", temp_name);
+
+            char lower_temp_name[100];
+            stringToLower(lower_temp_name, temp_name);
             
-            if (strcmp(search_name, temp_name) == 0) {
+            if (strcmp(lower_search_name, lower_temp_name) == 0) {
                 found_flag = 1;
                 line_to_edit = current_line_number;
-                break; // เจอแล้ว หยุดค้นหา (ข้อมูลที่เจอจะยังอยู่ใน line_buffer)
+                break;
             }
         }
         fclose(infile);
 
         if (found_flag == 1) {
-            break; // ออกจาก loop ค้นหาเพื่อไปขั้นตอนถัดไป
+            break;
         } else {
             printf("-> '%s' not found. Please try again.\n\n", search_name);
         }
     }
 
-    // ---- ส่วนที่เพิ่มเข้ามา: แสดงข้อมูลปัจจุบันและขอการยืนยัน ----
     char old_name[100], old_service[100], old_phone[50], old_email[100];
-    // แยกข้อมูลจาก line_buffer ที่เราเจอจากการค้นหา
     sscanf(line_buffer, "%[^,],%[^,],%[^,],%[^\n]", old_name, old_service, old_phone, old_email);
 
     printf("\n--- Provider Found ---\n");
@@ -396,20 +448,18 @@ void update_data() {
         remove_newline(confirm_edit);
 
         if (strcmp(confirm_edit, "yes") == 0) {
-            break; // ผู้ใช้ต้องการแก้ไขต่อ
+            break;
         } else if (strcmp(confirm_edit, "no") == 0) {
             printf("Update cancelled. Returning to main menu.\n");
-            return; // ผู้ใช้ยกเลิก กลับไปเมนูหลัก
+            return;
         } else {
             printf("-> Invalid input. Please type 'yes' or 'no'.\n");
         }
     }
-    // ---- จบส่วนที่เพิ่มเข้ามา ----
 
     printf("\nPlease enter the new information for the provider.\n");
     char new_name[100], new_service[100], new_phone[50], new_email[100];
 
-    // ส่วนของโค้ดเดิมของคุณที่ใช้รับข้อมูลและ validation
     while (1) {
         printf("Enter New Provider Name (type 'exit' to cancel): ");
         fgets(new_name, sizeof(new_name), stdin);
@@ -439,7 +489,7 @@ void update_data() {
     }
     
     while (1) {
-        printf("Enter Phone Number (e.g., 555-1234): ");
+        printf("Enter New Phone Number (e.g., 555-1234): ");
         fgets(new_phone, 50, stdin);
         remove_newline(new_phone);
         if (strcmp(new_phone, "exit") == 0) {
@@ -453,7 +503,7 @@ void update_data() {
     }
 
     while (1) {
-        printf("Enter Email (e.g., contact@example.com): ");
+        printf("Enter New Email (e.g., contact@example.com): ");
         fgets(new_email, 100, stdin);
         remove_newline(new_email);
         if (strcmp(new_email, "exit") == 0) {
@@ -490,7 +540,6 @@ void update_data() {
         }
     }
 
-    // ส่วนของการเขียนไฟล์ใหม่ (เหมือนเดิม)
     FILE *infile = fopen("providers.csv", "r");
     FILE *outfile = fopen("temp.csv", "w");
 
