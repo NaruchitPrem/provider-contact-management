@@ -73,35 +73,45 @@ int is_valid_phone(const char *phone) {
 }
 
 int is_valid_email(const char *email) {
+    int i;
+    int at_found = 0;
+    int dot_after_at = 0;
     int at_index = -1;
-    int email_len = strlen(email);
 
-    for (int i = 0; i < email_len; i++) {
+    for (i = 0; email[i] != '\0'; i++) {
+        char c = email[i];
+        if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ||
+              c == '.' || c == '_' || c == '-' || c == '@')) {
+            return 0;
+        }
+    }
+    
+    for (i = 0; email[i] != '\0'; i++) {
         if (email[i] == '@') {
+            if (at_found) return 0;
+            at_found = 1;
             at_index = i;
-            break;
         }
     }
 
-    if (at_index <= 0) {
+    if (!at_found || at_index == 0) {
         return 0;
     }
 
-    int dot_found_after_at = 0;
-    for (int i = at_index + 1; i < email_len; i++) {
+    for (i = at_index + 1; email[i] != '\0'; i++) {
         if (email[i] == '.') {
-            if (i > at_index + 1 && i < email_len - 1) {
-                dot_found_after_at = 1;
+            if (i > at_index + 1 && email[i+1] != '\0') {
+                dot_after_at = 1;
                 break;
             }
         }
     }
 
-    if (dot_found_after_at) {
-        return 1;
-    } else {
+    if (!dot_after_at) {
         return 0;
     }
+
+    return 1;
 }
 
 int is_valid_input(const char *str) {
